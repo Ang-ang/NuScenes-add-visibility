@@ -37,21 +37,23 @@ class PointPillarScatter(nn.Module):
         batch_spatial_features = torch.stack(batch_spatial_features, 0)
         batch_spatial_features = batch_spatial_features.view(batch_size, self.num_bev_features * self.nz, self.ny,
                                                              self.nx)
-        # batch_dict['spatial_features'] = batch_spatial_features
         '''
         fusion visibility
         '''
-        visibility = batch_dict['visibility']
-        # print('visibility:', visibility.shape)  # torch.Size([4, 512, 512])
-        # print('batch:', batch_spatial_features.shape)  # torch.Size([4, 64, 512, 512])
-        fusion_features = []
-        for batch_idx in range(batch_size):
-            fusion = batch_spatial_features[batch_idx] * visibility[batch_idx]
-            fusion_features.append(fusion)
+        if 'visibility' in batch_dict:
+            visibility = batch_dict['visibility']
+            # print('visibility:', visibility.shape)  # torch.Size([4, 512, 512])
+            # print('batch:', batch_spatial_features.shape)  # torch.Size([4, 64, 512, 512])
+            fusion_features = []
+            for batch_idx in range(batch_size):
+                fusion = batch_spatial_features[batch_idx] * visibility[batch_idx]
+                fusion_features.append(fusion)
 
-        fusion_features = torch.stack(fusion_features, 0)
-        batch_dict['spatial_features'] = fusion_features
-        # print('fusion_features:', fusion_features.shape)#torch.Size([4, 64, 512, 512])
+            fusion_features = torch.stack(fusion_features, 0)
+            batch_dict['spatial_features'] = fusion_features
+            # print('fusion_features:', fusion_features.shape)#torch.Size([4, 64, 512, 512])
+        else:
+            batch_dict['spatial_features'] = batch_spatial_features
         '''
         fusion visibility
         '''
