@@ -109,15 +109,27 @@ class DataAugmentor(object):
         """
         points = data_dict['points']
         num_sampled_points = data_dict['num_sampled_points']
-        sampled_points, original_points = points[:num_sampled_points, :4], points[num_sampled_points:, :4]
+        sampled_points, original_points = points[:num_sampled_points], points[num_sampled_points:]
+        sampled_points, original_points = np.delete(sampled_points, 3, axis=1), np.delete(original_points, 3,
+                                                                                          axis=1)  # delete col 4:intensity
         sensor_origins = np.array([0.0, 0.0, 0.0])
         pc_range = np.array([-51.2, -51.2, -5.0, 51.2, 51.2, 3.0])
         voxel_size = np.array([0.2, 0.2, 8.0])
+        indices=data_dict['indices']
+        time_stamps = points[indices[:-1], -1]
+        time_stamps = (time_stamps[:-1] + time_stamps[1:]) / 2
+        time_stamps = [-1000.0] + time_stamps.tolist() + [1000.0]  # add boundaries
+        time_stamps = np.array(time_stamps)
+        #print('timestamps', time_stamps.shape)#(11,)
+        #logodds, original_mask, sampled_mask = mapping.compute_logodds_and_masks_nuscenes(original_points,
+                                                                                          #sampled_points,
+                                                                                          #sensor_origins, time_stamps,
+                                                                                          #pc_range, min(voxel_size))
         logodds, original_mask, sampled_mask = mapping.compute_logodds_and_masks_no_timestamp(original_points,
                                                                                               sampled_points,
                                                                                               sensor_origins, pc_range,
                                                                                               min(voxel_size))
-        # print('log:', logodds.shape)  # (10485760,)(512*512*40)
+        #print('log:', logodds.shape)  # (10485760,)(512*512*40)
         occupancy = torch.sigmoid(torch.from_numpy(logodds))  # (occupied:0.7,unknown:0.5,free:0.4)
         occupancy = occupancy.reshape((-1, 40, 512, 512))
         # print('occ',occupancy)
@@ -135,10 +147,10 @@ class DataAugmentor(object):
         data_dict['visibility'] = visibility
         # print('vis:', visibility.shape)  # (512, 512)
         # print(visibility)
-        # bev_map = nuscene_vis(points)
-        # cv2.imshow('bev', bev_map)
-        # cv2.imshow('vis', abs(visibility))
-        # cv2.waitKey(0)
+        #bev_map = nuscene_vis(points)
+        #cv2.imshow('bev', bev_map)
+        #cv2.imshow('vis', abs(visibility))
+        #cv2.waitKey(0)
         """
          add raycasting
         """
